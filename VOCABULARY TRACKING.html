@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Vocabulary Master - Aplikasi Hafalan Kosakata</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --accent: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .tab-button:hover {
+            background: #f3f4f6;
+            color: var(--primary);
+        }
+
+        .tab-button.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .flashcard {
+            perspective: 1000px;
+            transition: all 0.3s ease;
+        }
+
+        .flashcard-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            backface-visibility: hidden;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+
+        .vocab-item {
+            transition: all 0.3s ease;
+        }
+
+        .vocab-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .tab-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .flashcard {
+                max-width: 100%;
+            }
+            
+            .grid {
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="gradient-bg text-white shadow-lg">
+            <div class="container mx-auto px-4 py-4 md:py-6">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="flex items-center mb-4 md:mb-0">
+                        <i class="fas fa-book-open text-2xl md:text-3xl mr-3"></i>
+                        <h1 class="text-xl md:text-2xl font-bold">Vocabulary Master</h1>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <select id="languageSelect" class="bg-white bg-opacity-20 border border-white border-opacity-30 rounded-full py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white text-sm">
+                                <option value="english">🇬🇧 English</option>
+                                <option value="mandarin">🇨🇳 Mandarin</option>
+                                <option value="japanese">🇯🇵 Japanese</option>
+                            </select>
+                        </div>
+                        
+                        <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none">
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                                <i class="fas fa-user text-gray-700"></i>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6 md:py-8">
+            <!-- Navigation Tabs -->
+            <div class="flex flex-wrap mb-6 md:mb-8 border-b border-gray-200 overflow-x-auto">
+                <button id="dashboardTab" class="tab-button active" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </button>
+                <button id="flashcardTab" class="tab-button" data-tab="flashcard">
+                    <i class="fas fa-clone mr-2"></i> Flashcard
+                </button>
+                <button id="vocabularyTab" class="tab-button" data-tab="vocabulary">
+                    <i class="fas fa-book mr-2"></i> Vocabulary
+                </button>
+                <button id="statisticsTab" class="tab-button" data-tab="statistics">
+                    <i class="fas fa-chart-bar mr-2"></i> Statistics
+                </button>
+                <button id="settingsTab" class="tab-button" data-tab="settings">
+                    <i class="fas fa-cog mr-2"></i> Settings
+                </button>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboardContent" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                    <!-- Total Vocabulary Card -->
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6 flex items-center">
+                        <div class="mr-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 gradient-bg rounded-full flex items-center justify-center">
+                                <i class="fas fa-book text-white text-lg md:text-xl"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Total Vocabulary</p>
+                            <h3 class="text-xl md:text-2xl font-bold" id="totalVocab">0</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Mastered Vocabulary Card -->
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6 flex items-center">
+                        <div class="mr-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-500 text-lg md:text-xl"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Mastered Words</p>
+                            <h3 class="text-xl md:text-2xl font-bold" id="masteredVocab">0</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Daily Progress Card -->
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6 flex items-center">
+                        <div class="mr-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-bullseye text-blue-500 text-lg md:text-xl"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Daily Progress</p>
+                            <h3 class="text-xl md:text-2xl font-bold" id="todayProgress">0/10</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6 md:mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg md:text-xl font-bold">Learning Progress</h2>
+                        <span class="text-xs md:text-sm text-gray-500">Daily Goal Progress</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div id="dailyProgressBar" class="gradient-bg h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2 text-center text-sm text-gray-600">
+                        <span id="progressText">0% completed today</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                        <h2 class="text-lg md:text-xl font-bold mb-4">Recent Activity</h2>
+                        <div id="recentActivity" class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 gradient-bg rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-clone text-white text-sm"></i>
+                                </div>
+                                <p class="text-sm">No recent activity yet</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                        <h2 class="text-lg md:text-xl font-bold mb-4">Quick Actions</h2>
+                        <div class="grid grid-cols-2 gap-3 md:gap-4">
+                            <button onclick="startFlashcard()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-3 px-4 rounded-lg flex flex-col items-center justify-center transition">
+                                <i class="fas fa-clone text-lg md:text-xl mb-2"></i>
+                                <span class="text-sm">Flashcards</span>
+                            </button>
+                            <button onclick="showAddVocabModal()" class="bg-green-100 hover:bg-green-200 text-green-700 py-3 px-4 rounded-lg flex flex-col items-center justify-center transition">
+                                <i class="fas fa-plus text-lg md:text-xl mb-2"></i>
+                                <span class="text-sm">Add Word</span>
+                            </button>
+                            <button onclick="showPracticeModal()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 py-3 px-4 rounded-lg flex flex-col items-center justify-center transition">
+                                <i class="fas fa-pen text-lg md:text-xl mb-2"></i>
+                                <span class="text-sm">Practice</span>
+                            </button>
+                            <button onclick="exportData()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 py-3 px-4 rounded-lg flex flex-col items-center justify-center transition">
+                                <i class="fas fa-file-export text-lg md:text-xl mb-2"></i>
+                                <span class="text-sm">Export</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flashcard Content -->
+            <div id="flashcardContent" class="tab-content">
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6 md:mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <h2 class="text-lg md:text-xl font-bold mb-4 md:mb-0">Flashcard Mode</h2>
+                        <div class="flex space-x-3">
+                            <button id="startFlashcardBtn" onclick="startFlashcard()" class="gradient-bg hover:opacity-90 text-white py-2 px-4 md:px-6 rounded-full flex items-center transition text-sm md:text-base">
+                                <i class="fas fa-play mr-2"></i> Start (<span id="cardCount">0</span>)
+                            </button>
+                            <button onclick="showShuffleModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-full flex items-center transition text-sm md:text-base">
+                                <i class="fas fa-random mr-2"></i> Options
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <div id="flashcard" class="flashcard max-w-md mx-auto mb-6 cursor-pointer" onclick="flipCard()">
+                                <div class="flashcard-inner">
+                                    <div class="flashcard-front bg-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center h-48 md:h-64">
+                                        <div class="text-4xl md:text-5xl mb-4">🃏</div>
+                                        <h3 class="text-lg md:text-xl font-semibold text-center">Tap to flip the card</h3>
+                                        <p class="text-sm text-gray-500 mt-2 text-center">Click "Start" to begin learning</p>
+                                    </div>
+                                    <div class="flashcard-back gradient-bg text-white rounded-xl shadow-lg p-6 flex flex-col items-center justify-center h-48 md:h-64">
+                                        <h3 id="flashcardWord" class="text-2xl md:text-3xl font-bold mb-3 text-center">Word</h3>
+                                        <p id="flashcardPinyin" class="text-lg text-white text-opacity-80 mb-2 text-center hidden"></p>
+                                        <p id="flashcardMeaning" class="text-center text-white text-opacity-90">Meaning</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-center space-x-4">
+                                <button id="knowBtn" onclick="markCard(true)" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 md:px-6 rounded-full flex items-center transition disabled:opacity-50 text-sm md:text-base" disabled>
+                                    <i class="fas fa-check mr-2"></i> Know It
+                                </button>
+                                <button id="dontKnowBtn" onclick="markCard(false)" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 md:px-6 rounded-full flex items-center transition disabled:opacity-50 text-sm md:text-base" disabled>
+                                    <i class="fas fa-times mr-2"></i> Don't Know
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl shadow-md p-4">
+                                <h3 class="font-semibold mb-3">Session Progress</h3>
+                                <div class="flex items-center mb-3">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3 text-sm font-bold">
+                                        <span id="correctCount">0</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="bg-gray-200 rounded-full h-3">
+                                            <div id="correctProgress" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-red-100 text-red-600 mr-3 text-sm font-bold">
+                                        <span id="wrongCount">0</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="bg-gray-200 rounded-full h-3">
+                                            <div id="wrongProgress" class="bg-red-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-md p-4">
+                                <h3 class="font-semibold mb-3">Session Summary</h3>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex justify-between">
+                                        <span class="text-gray-600">Cards in session:</span>
+                                        <span id="sessionTotal">0</span>
+                                    </li>
+                                    <li class="flex justify-between">
+                                        <span class="text-gray-600">Cards remaining:</span>
+                                        <span id="sessionRemaining">0</span>
+                                    </li>
+                                    <li class="flex justify-between">
+                                        <span class="text-gray-600">Accuracy rate:</span>
+                                        <span id="masteryRate">0%</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h2 class="text-lg md:text-xl font-bold mb-4">Vocabulary List</h2>
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4 space-y-3 md:space-y-0">
+                        <div class="relative w-full md:w-64">
+                            <input type="text" id="vocabSearch" placeholder="Search vocabulary..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div class="absolute left-3 top-2.5 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <button onclick="showAddVocabModal()" class="gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg flex items-center transition">
+                            <i class="fas fa-plus mr-2"></i> Add New
+                        </button>
+                    </div>
+                    
+                    <div id="vocabList" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Vocabulary Content -->
+            <div id="vocabularyContent" class="tab-content">
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex flex-col lg:flex-row justify-between items-center mb-6 space-y-4 lg:space-y-0">
+                        <h2 class="text-lg md:text-xl font-bold">Vocabulary Manager</h2>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="showImportModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg flex items-center transition text-sm">
+                                <i class="fas fa-file-import mr-2"></i> Import
+                            </button>
+                            <button onclick="exportData()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg flex items-center transition text-sm">
+                                <i class="fas fa-file-export mr-2"></i> Export
+                            </button>
+                            <button onclick="showAddVocabModal()" class="gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg flex items-center transition text-sm">
+                                <i class="fas fa-plus mr-2"></i> Add New
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Word
+                                    </th>
+                                    <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Meaning
+                                    </th>
+                                    <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Last Reviewed
+                                    </th>
+                                    <th scope="col" class="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="vocabTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Vocabulary items will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Content -->
+            <div id="statisticsContent" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                        <h2 class="text-lg md:text-xl font-bold mb-4">Learning Progress</h2>
+                        <div class="flex items-center justify-center h-48">
+                            <div class="text-center">
+                                <div class="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center mb-4">
+                                    <div class="text-xl md:text-2xl font-bold text-white" id="overallProgress">0%</div>
+                                </div>
+                                <p class="text-gray-600">Overall Mastery</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                        <h2 class="text-lg md:text-xl font-bold mb-4">Performance Metrics</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                                        <i class="fas fa-check text-green-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 text-sm">Correct Answers</p>
+                                        <h3 id="totalCorrect" class="text-lg md:text-xl font-bold">0</h3>
+                                    </div>
+                                </div>
+                                <div class="text-green-500 font-semibold" id="correctPercentage">0%</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
+                                        <i class="fas fa-times text-red-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 text-sm">Wrong Answers</p>
+                                        <h3 id="totalWrong" class="text-lg md:text-xl font-bold">0</h3>
+                                    </div>
+                                </div>
+                                <div class="text-red-500 font-semibold" id="wrongPercentage">0%</div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-200">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-700">Mastery Progress</span>
+                                    <span id="masteryPercentage" class="text-sm font-medium">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="masteryProgressBar" class="gradient-bg h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h2 class="text-lg md:text-xl font-bold mb-4">Activity History</h2>
+                    <div id="activityTimeline" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-history text-3xl mb-4"></i>
+                            <p>Start practicing to see your activity history</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div id="settingsContent" class="tab-content">
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h2 class="text-lg md:text-xl font-bold mb-6">Application Settings</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-6">
+                            <h3 class="text-lg font-semibold mb-4">Learning Preferences</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Daily Goal</label>
+                                    <input type="number" id="dailyGoalInput" min="1" max="50" value="10" class="w-full md:w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <span class="text-sm text-gray-500">vocabulary per day</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Language</label>
+                                    <select id="defaultLanguageSelect" class="w-full px-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                                        <option value="english">English</option>
+                                        <option value="mandarin">Mandarin</option>
+                                        <option value="japanese">Japanese</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Data Management</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <button onclick="exportData()" class="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">
+                                    <span>Export Data</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button onclick="showImportModal()" class="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">
+                                    <span>Import Data</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button onclick="showResetConfirmation()" class="flex justify-between items-center px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition">
+                                    <span>Reset All Data</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Vocabulary Modal -->
+    <div id="addVocabModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-4 md:p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg md:text-xl font-bold">Add New Vocabulary</h3>
+                    <button onclick="closeModal('addVocabModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="addVocabForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                        <select id="vocabLanguage" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="english">English</option>
+                            <option value="mandarin">Mandarin</option>
+                            <option value="japanese">Japanese</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Word *</label>
+                        <input type="text" id="vocabWord" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div id="pinyinField" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Pinyin</label>
+                        <input type="text" id="vocabPinyin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Meaning *</label>
+                        <input type="text" id="vocabMeaning" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Pronunciation</label>
+                        <input type="text" id="vocabPronunciation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Example Sentence</label>
+                        <textarea id="vocabExample" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <input type="text" id="vocabCategory" placeholder="e.g., verbs, nouns, adjectives" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="w-full gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg transition">
+                            Add Vocabulary
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-4 md:p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg md:text-xl font-bold">Import Vocabulary</h3>
+                    <button onclick="closeModal('importModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select File</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div class="space-y-1 text-center">
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500">
+                                        <span>Upload a file</span>
+                                        <input id="file-upload" name="file-upload" type="file" accept=".json,.csv" class="sr-only">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">CSV or JSON files up to 5MB</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 flex space-x-3">
+                        <button onclick="closeModal('importModal')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button onclick="importData()" class="flex-1 gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg transition">
+                            Import
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="resetConfirmationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-4 md:p-6">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                    </div>
+                </div>
+                
+                <h3 class="text-lg md:text-xl font-bold text-center mb-2">Confirm Reset</h3>
+                <p class="text-gray-600 text-center mb-6">Are you sure you want to reset all your vocabulary data? This action cannot be undone.</p>
+                
+                <div class="flex space-x-3">
+                    <button onclick="closeModal('resetConfirmationModal')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button onclick="resetAllData()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition">
+                        Reset All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Modal -->
+    <div id="practiceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-4 md:p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg md:text-xl font-bold">Practice Options</h3>
+                    <button onclick="closeModal('practiceModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="font-semibold mb-3">Select Mode</h4>
+                        <div class="grid grid-cols-1 gap-3">
+                            <button onclick="startFlashcardPractice('all')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-3 px-4 rounded-lg flex items-center justify-center transition">
+                                <i class="fas fa-clone text-xl mr-3"></i>
+                                <span>All Flashcards</span>
+                            </button>
+                            <button onclick="startFlashcardPractice('unmastered')" class="bg-red-100 hover:bg-red-200 text-red-700 py-3 px-4 rounded-lg flex items-center justify-center transition">
+                                <i class="fas fa-question-circle text-xl mr-3"></i>
+                                <span>Unmastered Words Only</span>
+                            </button>
+                            <button onclick="startFlashcardPractice('new')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 py-3 px-4 rounded-lg flex items-center justify-center transition">
+                                <i class="fas fa-star text-xl mr-3"></i>
+                                <span>New Words Only</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-3">Number of Words</h4>
+                        <input type="range" id="wordCountSlider" min="5" max="50" value="10" class="w-full">
+                        <div class="flex justify-between mt-1 text-sm text-gray-500">
+                            <span>5 words</span>
+                            <span id="selectedWordCount" class="font-medium">10 words</span>
+                            <span>50 words</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shuffle Options Modal -->
+    <div id="shuffleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-4 md:p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg md:text-xl font-bold">Flashcard Options</h3>
+                    <button onclick="closeModal('shuffleModal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Cards</label>
+                        <select id="cardSelection" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="all">All Cards</option>
+                            <option value="unmastered">Unmastered Cards</option>
+                            <option value="mastered">Mastered Cards</option>
+                            <option value="new">New Cards</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Card Order</label>
+                        <select id="cardOrder" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="sequential">Sequential</option>
+                            <option value="random" selected>Random</option>
+                            <option value="difficulty">By Difficulty</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="pt-4 flex space-x-3">
+                    <button onclick="closeModal('shuffleModal')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button onclick="applyFlashcardSettings()" class="flex-1 gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg transition">
+                        Apply Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Vocabulary Data
+        let vocabularies = {
+            english: [
+                { 
+                    id: 1, 
+                    word: 'Ambitious', 
+                    meaning: 'Having a strong desire for success or achievement', 
+                    pronunciation: '/æmˈbɪʃəs/', 
+                    example: 'She is very ambitious about her career.', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'adjectives',
+                    difficulty: 'medium',
+                    tags: ['personality', 'positive']
+                },
+                { 
+                    id: 2, 
+                    word: 'Resilient', 
+                    meaning: 'Able to withstand or recover quickly from difficult conditions', 
+                    pronunciation: '/rɪˈzɪliənt/', 
+                    example: 'He remained resilient despite the challenges.', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'adjectives',
+                    difficulty: 'medium',
+                    tags: ['personality', 'positive']
+                },
+                { 
+                    id: 3, 
+                    word: 'Serendipity', 
+                    meaning: 'The occurrence of events by chance in a happy or beneficial way', 
+                    pronunciation: '/ˌserənˈdɪpəti/', 
+                    example: 'Meeting her was pure serendipity.', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'nouns',
+                    difficulty: 'hard',
+                    tags: ['concept']
+                },
+                { 
+                    id: 4, 
+                    word: 'Eloquent', 
+                    meaning: 'Fluent or persuasive in speaking or writing', 
+                    pronunciation: '/ˈeləkwənt/', 
+                    example: 'His eloquent speech moved the audience.', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'adjectives',
+                    difficulty: 'medium',
+                    tags: ['communication']
+                },
+                { 
+                    id: 5, 
+                    word: 'Perseverance', 
+                    meaning: 'Persistence in doing something despite difficulty or delay in achieving success', 
+                    pronunciation: '/ˌpɜːrsəˈvɪrəns/', 
+                    example: 'Success requires perseverance and hard work.', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'nouns',
+                    difficulty: 'medium',
+                    tags: ['positive']
+                }
+            ],
+            mandarin: [
+                { 
+                    id: 1, 
+                    word: '坚持', 
+                    pinyin: 'jiān chí', 
+                    meaning: 'Persist, insist, keep doing', 
+                    example: '我们要坚持学习中文。(Wǒmen yào jiānchí xuéxí zhōngwén.)', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'verbs',
+                    difficulty: 'medium',
+                    tags: ['positive']
+                },
+                { 
+                    id: 2, 
+                    word: '努力', 
+                    pinyin: 'nǔ lì', 
+                    meaning: 'Strive hard, put in effort', 
+                    example: '他很努力工作。(Tā hěn nǔlì gōngzuò.)', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'verbs',
+                    difficulty: 'easy',
+                    tags: ['positive']
+                },
+                { 
+                    id: 3, 
+                    word: '机会', 
+                    pinyin: 'jī huì', 
+                    meaning: 'Opportunity, chance', 
+                    example: '这是一个很好的机会。(Zhè shì yīgè hěn hǎo de jīhuì.)', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'nouns',
+                    difficulty: 'easy',
+                    tags: ['concept']
+                },
+                { 
+                    id: 4, 
+                    word: '智慧', 
+                    pinyin: 'zhì huì', 
+                    meaning: 'Wisdom, intelligence', 
+                    example: '经验给我们带来智慧。(Jīngyàn gěi wǒmen dàilái zhìhuì.)', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'nouns',
+                    difficulty: 'medium',
+                    tags: ['positive']
+                },
+                { 
+                    id: 5, 
+                    word: '成功', 
+                    pinyin: 'chéng gōng', 
+                    meaning: 'Success, succeed', 
+                    example: '成功需要时间和努力。(Chénggōng xūyào shíjiān hé nǔlì.)', 
+                    mastered: false, 
+                    attempts: 0, 
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    category: 'verbs',
+                    difficulty: 'easy',
+                    tags: ['positive']
+                },
+                { 
+                    id: 6, 
+                    word: '朋友', 
+                    pinyin: 'péng yǒu', 
+                    meaning: 'Friend', 
+                    example: '我有很多好朋友。(Wǒ yǒu hěnduō hǎo péngyǒu.)', 
+                    mastered: true, 
+                    attempts: 3, 
+                    correctAnswers: 3,
+                    wrongAnswers: 0,
+                    lastReviewed: new Date().toISOString(),
+                    category: 'nouns',
+                    difficulty: 'easy',
+                    tags: ['people']
+                }
+            ],
+            japanese: []
+        };
+
+        let currentLanguage = 'english';
+        let currentCardIndex = 0;
+        let dailyGoal = 10;
+        let todayProgress = 0;
+        let flashcardActive = false;
+        let sessionCards = [];
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+        let sessionStats = {
+            totalCards: 0,
+            cardsRemaining: 0,
+            masteryRate: '0%',
+            correctAnswers: 0,
+            wrongAnswers: 0
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            setupEventListeners();
+            updateStats();
+            renderVocabList();
+            renderVocabTable();
+            updateStatistics();
+        });
+
+        function setupEventListeners() {
+            // Language selection
+            document.getElementById('languageSelect').addEventListener('change', function() {
+                currentLanguage = this.value;
+                updateStats();
+                renderVocabList();
+                renderVocabTable();
+                updateStatistics();
+                saveSettings();
+            });
+
+            // Settings
+            document.getElementById('dailyGoalInput').addEventListener('change', function() {
+                dailyGoal = parseInt(this.value) || 10;
+                saveSettings();
+                updateStats();
+            });
+
+            document.getElementById('defaultLanguageSelect').addEventListener('change', function() {
+                currentLanguage = this.value;
+                document.getElementById('languageSelect').value = this.value;
+                saveSettings();
+                updateStats();
+                renderVocabList();
+                renderVocabTable();
+                updateStatistics();
+            });
+
+            // Vocabulary form
+            document.getElementById('addVocabForm').addEventListener('submit', saveVocabulary);
+            document.getElementById('vocabLanguage').addEventListener('change', togglePinyinField);
+
+            // Search
+            document.getElementById('vocabSearch').addEventListener('input', function() {
+                renderVocabList();
+            });
+
+            // Word count slider
+            document.getElementById('wordCountSlider').addEventListener('input', function() {
+                document.getElementById('selectedWordCount').textContent = `${this.value} words`;
+            });
+
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+        }
+
+        function togglePinyinField() {
+            const lang = document.getElementById('vocabLanguage').value;
+            const pinyinField = document.getElementById('pinyinField');
+            pinyinField.classList.toggle('hidden', lang !== 'mandarin');
+        }
+
+        function switchTab(tabName) {
+            // Update active tab button
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tab === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Show selected tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+                if (content.id === `${tabName}Content`) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Refresh specific tab content if needed
+            if (tabName === 'vocabulary') {
+                renderVocabTable();
+            } else if (tabName === 'statistics') {
+                updateStatistics();
+            }
+        }
+
+        function updateStats() {
+            const currentVocabs = vocabularies[currentLanguage];
+            const total = currentVocabs.length;
+            const mastered = currentVocabs.filter(v => v.mastered).length;
+            const dailyPercentage = Math.min(Math.round((todayProgress / dailyGoal) * 100), 100);
+
+            // Update main stats cards
+            document.getElementById('totalVocab').textContent = total;
+            document.getElementById('masteredVocab').textContent = mastered;
+            document.getElementById('todayProgress').textContent = `${todayProgress}/${dailyGoal}`;
+            
+            // Update progress bars
+            document.getElementById('dailyProgressBar').style.width = `${dailyPercentage}%`;
+            document.getElementById('progressText').textContent = `${dailyPercentage}% completed today`;
+            
+            // Update flashcard session stats
+            document.getElementById('cardCount').textContent = total;
+        }
+
+        function renderVocabList() {
+            const vocabListContainer = document.getElementById('vocabList');
+            vocabListContainer.innerHTML = '';
+            let currentVocabs = vocabularies[currentLanguage];
+            
+            // Apply search filter
+            const searchTerm = document.getElementById('vocabSearch').value.toLowerCase();
+            if (searchTerm) {
+                currentVocabs = currentVocabs.filter(v => 
+                    v.word.toLowerCase().includes(searchTerm) || 
+                    v.meaning.toLowerCase().includes(searchTerm) ||
+                    (v.pinyin && v.pinyin.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (currentVocabs.length === 0) {
+                vocabListContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No vocabulary found. Add some words to get started!</p>
+                        <button onclick="showAddVocabModal()" class="mt-4 gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg">
+                            Add Your First Word
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            currentVocabs.forEach(vocab => {
+                const vocabItem = document.createElement('div');
+                vocabItem.className = 'vocab-item bg-white rounded-lg shadow-sm p-4 border border-gray-100';
+                vocabItem.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-lg text-gray-800">${vocab.word}</h4>
+                            ${vocab.pinyin ? `<p class="text-indigo-500 text-sm mt-1">${vocab.pinyin}</p>` : ''}
+                            <p class="text-gray-600 mt-1">${vocab.meaning}</p>
+                            ${vocab.example ? `<p class="text-gray-500 text-sm mt-2 italic">"${vocab.example.substring(0, 80)}${vocab.example.length > 80 ? '...' : ''}"</p>` : ''}
+                        </div>
+                        <div class="ml-4 flex flex-col items-end space-y-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${vocab.mastered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${vocab.mastered ? 'Mastered' : 'Learning'}
+                            </span>
+                            <div class="flex space-x-2">
+                                <button onclick="practiceVocabulary(${vocab.id})" class="text-indigo-500 hover:text-indigo-700 transition" title="Practice">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button onclick="editVocabulary(${vocab.id})" class="text-gray-500 hover:text-indigo-500 transition" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                        <div class="text-xs text-gray-500">
+                            ${vocab.attempts > 0 ? `Reviewed ${vocab.attempts} times` : 'Not reviewed yet'}
+                        </div>
+                        ${vocab.category ? `<span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">${vocab.category}</span>` : ''}
+                    </div>
+                `;
+                vocabListContainer.appendChild(vocabItem);
+            });
+        }
+
+        function renderVocabTable() {
+            const tableBody = document.getElementById('vocabTableBody');
+            tableBody.innerHTML = '';
+            const currentVocabs = vocabularies[currentLanguage];
+
+            if (currentVocabs.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center">
+                            <div class="text-gray-500">
+                                <i class="fas fa-book text-4xl mb-4"></i>
+                                <p>No vocabulary words found for ${currentLanguage}</p>
+                                <button onclick="showAddVocabModal()" class="mt-4 gradient-bg hover:opacity-90 text-white py-2 px-4 rounded-lg">
+                                    Add Your First Word
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            currentVocabs.forEach(vocab => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <div class="font-bold text-gray-900">${vocab.word}</div>
+                        ${vocab.pinyin ? `<div class="text-sm text-indigo-500">${vocab.pinyin}</div>` : ''}
+                        ${vocab.pronunciation ? `<div class="text-xs text-gray-400">${vocab.pronunciation}</div>` : ''}
+                    </td>
+                    <td class="px-4 md:px-6 py-4">
+                        <div class="text-gray-900">${vocab.meaning}</div>
+                        ${vocab.example ? `<div class="text-sm text-gray-500 mt-1 italic max-w-xs truncate">"${vocab.example}"</div>` : ''}
+                        ${vocab.category ? `<span class="inline-block mt-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${vocab.category}</span>` : ''}
+                    </td>
+                    <td class="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${vocab.mastered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${vocab.mastered ? 'Mastered' : 'Learning'}
+                        </span>
+                        <div class="text-xs text-gray-500 mt-1">
+                            ${vocab.attempts > 0 ? `${vocab.correctAnswers || 0}/${vocab.attempts} correct` : 'No attempts'}
+                        </div>
+                    </td>
+                    <td class="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${vocab.lastReviewed ? new Date(vocab.lastReviewed).toLocaleDateString() : 'Never'}
+                    </td>
+                    <td class="px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="practiceVocabulary(${vocab.id})" class="text-indigo-600 hover:text-indigo-900 transition" title="Practice">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button onclick="editVocabulary(${vocab.id})" class="text-blue-600 hover:text-blue-900 transition" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteVocabulary(${vocab.id})" class="text-red-600 hover:text-red-900 transition" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateStatistics() {
+            const currentVocabs = vocabularies[currentLanguage];
+            const totalVocabs = currentVocabs.length;
+            const masteredVocabs = currentVocabs.filter(v => v.mastered).length;
+            const masteryPercentage = totalVocabs > 0 ? Math.round((masteredVocabs / totalVocabs) * 100) : 0;
+            
+            // Calculate total correct and wrong answers
+            let totalCorrect = 0;
+            let totalWrong = 0;
+            currentVocabs.forEach(vocab => {
+                totalCorrect += vocab.correctAnswers || 0;
+                totalWrong += vocab.wrongAnswers || 0;
+            });
+            
+            const totalAnswers = totalCorrect + totalWrong;
+            const correctPercentage = totalAnswers > 0 ? Math.round((totalCorrect / totalAnswers) * 100) : 0;
+            const wrongPercentage = totalAnswers > 0 ? Math.round((totalWrong / totalAnswers) * 100) : 0;
+
+            // Update statistics display
+            document.getElementById('totalCorrect').textContent = totalCorrect;
+            document.getElementById('totalWrong').textContent = totalWrong;
+            document.getElementById('correctPercentage').textContent = `${correctPercentage}%`;
+            document.getElementById('wrongPercentage').textContent = `${wrongPercentage}%`;
+            document.getElementById('masteryPercentage').textContent = `${masteryPercentage}%`;
+            document.getElementById('masteryProgressBar').style.width = `${masteryPercentage}%`;
+            document.getElementById('overallProgress').textContent = `${masteryPercentage}%`;
+        }
+
+        function startFlashcard() {
+            const currentVocabs = vocabularies[currentLanguage];
+            if (currentVocabs.length === 0) {
+                alert('No vocabulary words available. Please add some words first.');
+                return;
+            }
+            startFlashcardPractice('all');
+        }
+
+        function startFlashcardPractice(mode = 'all') {
+            const currentVocabs = vocabularies[currentLanguage];
+            sessionCards = [...currentVocabs];
+            
+            // Filter cards based on mode
+            switch(mode) {
+                case 'unmastered':
+                    sessionCards = sessionCards.filter(card => !card.mastered);
+                    break;
+                case 'mastered':
+                    sessionCards = sessionCards.filter(card => card.mastered);
+                    break;
+                case 'new':
+                    sessionCards = sessionCards.filter(card => card.attempts === 0);
+                    break;
+            }
+            
+            if (sessionCards.length === 0) {
+                alert(`No ${mode} cards available.`);
+                return;
+            }
+            
+            // Shuffle cards
+            sessionCards = shuffleArray(sessionCards);
+            
+            currentCardIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+            flashcardActive = true;
+            
+            updateSessionStats();
+            switchTab('flashcard');
+            showFlashcard();
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function showFlashcard() {
+            if (currentCardIndex >= sessionCards.length) {
+                endFlashcardSession();
+                return;
+            }
+
+            const card = sessionCards[currentCardIndex];
+            
+            // Reset card to front side
+            document.getElementById('flashcard').classList.remove('flipped');
+            document.getElementById('knowBtn').disabled = true;
+            document.getElementById('dontKnowBtn').disabled = true;
+            
+            // Update card content
+            document.getElementById('flashcardWord').textContent = card.word;
+            document.getElementById('flashcardMeaning').textContent = card.meaning;
+            
+            const pinyinElement = document.getElementById('flashcardPinyin');
+            if (currentLanguage === 'mandarin' && card.pinyin) {
+                pinyinElement.textContent = card.pinyin;
+                pinyinElement.classList.remove('hidden');
+            } else {
+                pinyinElement.classList.add('hidden');
+            }
+            
+            updateSessionStats();
+        }
+
+        function flipCard() {
+            if (!flashcardActive || currentCardIndex >= sessionCards.length) return;
+            
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.toggle('flipped');
+            
+            // Enable buttons when card is flipped to back
+            if (flashcard.classList.contains('flipped')) {
+                document.getElementById('knowBtn').disabled = false;
+                document.getElementById('dontKnowBtn').disabled = false;
+            }
+        }
+
+        function markCard(know) {
+            if (!flashcardActive || currentCardIndex >= sessionCards.length) return;
+            
+            const card = sessionCards[currentCardIndex];
+            
+            if (know) {
+                correctAnswers++;
+                card.correctAnswers = (card.correctAnswers || 0) + 1;
+                
+                // Mark as mastered after 3 correct answers
+                if (card.correctAnswers >= 3 && card.wrongAnswers === 0) {
+                    card.mastered = true;
+                }
+            } else {
+                wrongAnswers++;
+                card.wrongAnswers = (card.wrongAnswers || 0) + 1;
+                card.mastered = false; // Reset mastery if wrong
+            }
+            
+            card.attempts++;
+            card.lastReviewed = new Date().toISOString();
+            todayProgress++;
+            
+            updateStats();
+            updateSessionStats();
+            saveData();
+            
+            // Move to next card
+            currentCardIndex++;
+            setTimeout(() => {
+                showFlashcard();
+            }, 500);
+        }
+
+        function updateSessionStats() {
+            sessionStats.totalCards = sessionCards.length;
+            sessionStats.cardsRemaining = sessionCards.length - currentCardIndex;
+            const totalAnswered = correctAnswers + wrongAnswers;
+            sessionStats.masteryRate = totalAnswered > 0 ? 
+                `${Math.round((correctAnswers / totalAnswered) * 100)}%` : '0%';
+            
+            document.getElementById('correctCount').textContent = correctAnswers;
+            document.getElementById('wrongCount').textContent = wrongAnswers;
+            document.getElementById('sessionTotal').textContent = sessionStats.totalCards;
+            document.getElementById('sessionRemaining').textContent = sessionStats.cardsRemaining;
+            document.getElementById('masteryRate').textContent = sessionStats.masteryRate;
+            
+            // Update progress bars
+            const progressWidth = sessionStats.totalCards > 0 ? 
+                `${(correctAnswers / sessionStats.totalCards) * 100}%` : '0%';
+            document.getElementById('correctProgress').style.width = progressWidth;
+            
+            const wrongWidth = sessionStats.totalCards > 0 ? 
+                `${(wrongAnswers / sessionStats.totalCards) * 100}%` : '0%';
+            document.getElementById('wrongProgress').style.width = wrongWidth;
+        }
+
+        function endFlashcardSession() {
+            flashcardActive = false;
+            const accuracy = correctAnswers + wrongAnswers > 0 ? 
+                Math.round((correctAnswers / (correctAnswers + wrongAnswers)) * 100) : 0;
+            
+            // Add to recent activity
+            addRecentActivity(`Flashcard session completed: ${correctAnswers}/${correctAnswers + wrongAnswers} correct (${accuracy}%)`);
+            
+            // Show completion message
+            alert(`Session completed!\n\nCorrect: ${correctAnswers}\nWrong: ${wrongAnswers}\nAccuracy: ${accuracy}%`);
+            
+            // Reset flashcard display
+            document.getElementById('flashcard').classList.remove('flipped');
+            document.getElementById('flashcardWord').textContent = 'Word';
+            document.getElementById('flashcardMeaning').textContent = 'Meaning';
+            document.getElementById('knowBtn').disabled = true;
+            document.getElementById('dontKnowBtn').disabled = true;
+            
+            // Update UI
+            updateStats();
+            updateStatistics();
+            renderVocabList();
+            renderVocabTable();
+        }
+
+        function addRecentActivity(message) {
+            const activityContainer = document.getElementById('recentActivity');
+            const activityItem = document.createElement('div');
+            activityItem.className = 'flex items-center';
+            const isSuccess = message.includes('correct') && !message.includes('0/');
+            activityItem.innerHTML = `
+                <div class="w-8 h-8 ${isSuccess ? 'gradient-bg' : 'bg-gray-100'} rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-clone ${isSuccess ? 'text-white' : 'text-gray-500'} text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-gray-700">${message}</p>
+                    <p class="text-xs text-gray-500">${new Date().toLocaleTimeString()}</p>
+                </div>
+            `;
+            
+            // Remove "No recent activity" message if it exists
+            const noActivity = activityContainer.querySelector('p');
+            if (noActivity && noActivity.textContent.includes('No recent activity')) {
+                activityContainer.innerHTML = '';
+            }
+            
+            activityContainer.insertBefore(activityItem, activityContainer.firstChild);
+            
+            // Keep only latest 5 activities
+            while (activityContainer.children.length > 5) {
+                activityContainer.removeChild(activityContainer.lastChild);
+            }
+        }
+
+        // Modal functions
+        function showAddVocabModal() {
+            const form = document.getElementById('addVocabForm');
+            form.reset();
+            delete form.dataset.editId;
+            form.querySelector('button[type="submit"]').textContent = 'Add Vocabulary';
+            document.getElementById('vocabLanguage').value = currentLanguage;
+            togglePinyinField();
+            document.getElementById('addVocabModal').classList.remove('hidden');
+        }
+
+        function editVocabulary(id) {
+            const vocab = vocabularies[currentLanguage].find(v => v.id === id);
+            if (!vocab) return;
+            
+            const form = document.getElementById('addVocabForm');
+            form.reset();
+            
+            // Fill form with existing data
+            document.getElementById('vocabLanguage').value = currentLanguage;
+            document.getElementById('vocabWord').value = vocab.word;
+            document.getElementById('vocabMeaning').value = vocab.meaning;
+            document.getElementById('vocabPronunciation').value = vocab.pronunciation || '';
+            document.getElementById('vocabExample').value = vocab.example || '';
+            document.getElementById('vocabCategory').value = vocab.category || '';
+            
+            if (currentLanguage === 'mandarin' && vocab.pinyin) {
+                document.getElementById('vocabPinyin').value = vocab.pinyin;
+            }
+            
+            togglePinyinField();
+            
+            // Set form to edit mode
+            form.dataset.editId = id;
+            form.querySelector('button[type="submit"]').textContent = 'Update Vocabulary';
+            
+            document.getElementById('addVocabModal').classList.remove('hidden');
+        }
+
+        function deleteVocabulary(id) {
+            if (confirm('Are you sure you want to delete this vocabulary word?')) {
+                vocabularies[currentLanguage] = vocabularies[currentLanguage].filter(v => v.id !== id);
+                saveData();
+                renderVocabList();
+                renderVocabTable();
+                updateStats();
+                updateStatistics();
+            }
+        }
+
+        function practiceVocabulary(id) {
+            const vocab = vocabularies[currentLanguage].find(v => v.id === id);
+            if (!vocab) return;
+            
+            sessionCards = [vocab];
+            currentCardIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+            flashcardActive = true;
+            
+            updateSessionStats();
+            switchTab('flashcard');
+            showFlashcard();
+        }
+
+        function saveVocabulary(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const language = form.vocabLanguage.value;
+            const word = form.vocabWord.value.trim();
+            const meaning = form.vocabMeaning.value.trim();
+            const pinyin = form.vocabPinyin?.value.trim() || '';
+            const pronunciation = form.vocabPronunciation.value.trim();
+            const example = form.vocabExample.value.trim();
+            const category = form.vocabCategory.value.trim();
+            
+            if (!word || !meaning) {
+                alert('Word and meaning are required');
+                return;
+            }
+            
+            // Check for duplicates (except when editing)
+            const editId = form.dataset.editId ? parseInt(form.dataset.editId) : null;
+            const isDuplicate = vocabularies[language].some(v => 
+                v.word.toLowerCase() === word.toLowerCase() && v.id !== editId
+            );
+            
+            if (isDuplicate) {
+                alert('This word already exists in your vocabulary list');
+                return;
+            }
+            
+            if (editId) {
+                // Update existing vocabulary
+                const index = vocabularies[language].findIndex(v => v.id === editId);
+                if (index !== -1) {
+                    vocabularies[language][index] = {
+                        ...vocabularies[language][index],
+                        word,
+                        meaning,
+                        pinyin,
+                        pronunciation,
+                        example,
+                        category
+                    };
+                }
+            } else {
+                // Add new vocabulary
+                const id = vocabularies[language].length > 0 ? 
+                    Math.max(...vocabularies[language].map(v => v.id)) + 1 : 1;
+                
+                vocabularies[language].push({
+                    id,
+                    word,
+                    meaning,
+                    pinyin,
+                    pronunciation,
+                    example,
+                    category,
+                    mastered: false,
+                    attempts: 0,
+                    correctAnswers: 0,
+                    wrongAnswers: 0,
+                    lastReviewed: null,
+                    difficulty: 'medium',
+                    tags: []
+                });
+            }
+            
+            saveData();
+            renderVocabList();
+            renderVocabTable();
+            updateStats();
+            updateStatistics();
+            closeModal('addVocabModal');
+            
+            // Add to recent activity
+            addRecentActivity(`${editId ? 'Updated' : 'Added'} vocabulary word: "${word}"`);
+        }
+
+        // Other modal functions
+        function showImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+
+        function showShuffleModal() {
+            document.getElementById('shuffleModal').classList.remove('hidden');
+        }
+
+        function showPracticeModal() {
+            document.getElementById('practiceModal').classList.remove('hidden');
+        }
+
+        function showResetConfirmation() {
+            document.getElementById('resetConfirmationModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function applyFlashcardSettings() {
+            const selection = document.getElementById('cardSelection').value;
+            closeModal('shuffleModal');
+            startFlashcardPractice(selection);
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('file-upload');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to import');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.vocabularies) {
+                        // Merge or replace data
+                        Object.keys(data.vocabularies).forEach(lang => {
+                            if (!vocabularies[lang]) vocabularies[lang] = [];
+                            vocabularies[lang] = [...vocabularies[lang], ...data.vocabularies[lang]];
+                        });
+                        
+                        saveData();
+                        updateStats();
+                        renderVocabList();
+                        renderVocabTable();
+                        updateStatistics();
+                        
+                        alert('Data imported successfully!');
+                        closeModal('importModal');
+                    } else {
+                        alert('Invalid file format');
+                    }
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportData() {
+            const data = {
+                vocabularies,
+                settings: {
+                    currentLanguage,
+                    dailyGoal,
+                    todayProgress
+                },
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vocabulary-master-export-${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            addRecentActivity('Exported vocabulary data');
+        }
+
+        function resetAllData() {
+            vocabularies = {
+                english: [],
+                mandarin: [],
+                japanese: []
+            };
+            
+            todayProgress = 0;
+            saveData();
+            updateStats();
+            renderVocabList();
+            renderVocabTable();
+            updateStatistics();
+            closeModal('resetConfirmationModal');
+            
+            // Clear recent activity
+            document.getElementById('recentActivity').innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-8 h-8 gradient-bg rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-clone text-white text-sm"></i>
+                    </div>
+                    <p class="text-sm">No recent activity yet</p>
+                </div>
+            `;
+            
+            alert('All data has been reset successfully');
+        }
+
+        // Data persistence
+        function saveData() {
+            const dataToSave = {
+                vocabularies,
+                todayProgress,
+                lastSaved: new Date().toISOString()
+            };
+            try {
+                // Use a simple variable to store data during session
+                window.vocabData = dataToSave;
+            } catch (error) {
+                console.warn('Could not save data:', error);
+            }
+        }
+
+        function loadData() {
+            try {
+                if (window.vocabData) {
+                    const data = window.vocabData;
+                    if (data.vocabularies) {
+                        vocabularies = data.vocabularies;
+                    }
+                    if (data.todayProgress !== undefined) {
+                        todayProgress = data.todayProgress;
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not load data:', error);
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                currentLanguage,
+                dailyGoal,
+                lastUpdated: new Date().toISOString()
+            };
+            try {
+                window.vocabSettings = settings;
+            } catch (error) {
+                console.warn('Could not save settings:', error);
+            }
+        }
+
+        function loadSettings() {
+            try {
+                if (window.vocabSettings) {
+                    const settings = window.vocabSettings;
+                    currentLanguage = settings.currentLanguage || 'english';
+                    dailyGoal = settings.dailyGoal || 10;
+                    
+                    // Update UI elements
+                    document.getElementById('languageSelect').value = currentLanguage;
+                    document.getElementById('defaultLanguageSelect').value = currentLanguage;
+                    document.getElementById('dailyGoalInput').value = dailyGoal;
+                }
+                
+                // Load vocabulary data
+                loadData();
+            } catch (error) {
+                console.warn('Could not load settings:', error);
+            }
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            saveData();
+            saveSettings();
+        }, 30000);
+    </script>
+</body>
+</html>
